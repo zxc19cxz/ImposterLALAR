@@ -135,15 +135,24 @@ export function engineReducer(state: GameState, action: GameAction): GameState {
         { length: validated.players },
         (_, i) => (i + 1) as PlayerId,
       );
+      // Shuffle player numbers for reveal order
       const revealOrder = shuffleWithRng(playerNumbers, rng);
-      const imposterSet = new Set<PlayerId>(
-        revealOrder.slice(0, validated.imposters),
-      );
-
-      const rolesByPlayer: Record<PlayerId, Role> = {};
-      for (const p of playerNumbers) {
-        rolesByPlayer[p] = imposterSet.has(p) ? "IMPOSTER" : "CIVILIAN";
+      
+      // Create a separate shuffle for imposter selection to ensure it's independent of reveal order
+      const imposterCandidates = [...playerNumbers];
+      const imposterSet = new Set<PlayerId>();
+      
+      // Select imposters using the same RNG but in a way that's independent of reveal order
+      while (imposterSet.size < validated.imposters && imposterCandidates.length > 0) {
+        const randomIndex = Math.floor(rng() * imposterCandidates.length);
+        const [selected] = imposterCandidates.splice(randomIndex, 1);
+        imposterSet.add(selected);
       }
+
+      // Assign roles to all players
+      const rolesByPlayer = Object.fromEntries(
+        playerNumbers.map(p => [p, imposterSet.has(p) ? "IMPOSTER" : "CIVILIAN"])
+      ) as Record<PlayerId, Role>;
 
       const { secret, imposter } = pickUniqueWords(chosenCategory.words, rng);
       const imposterWord = setup.imposterSeesImposterOnly ? null : imposter;

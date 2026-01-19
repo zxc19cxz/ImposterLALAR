@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "./Button";
 import { getRevealPlayer } from "@/lib/engine/gameEngine";
 import type { GameState, PlayerId } from "@/types/gameEngine";
+import { Info } from "lucide-react";
 
 type RevealCardProps = {
   state: GameState;
@@ -38,11 +39,11 @@ export function RevealCard({ state, onNext }: RevealCardProps) {
             Player {player ?? "—"} • Reveal {state.revealIndex + 1} of {state.revealOrder.length}
           </p>
           <h2 className="text-[22px] leading-snug font-semibold tracking-[-0.01em] mb-6 text-zinc-950">
-            Keep this private
+            Хүнд битгий харуул
           </h2>
           
           <div 
-            className={`py-8 px-4 rounded-2xl mb-6 min-h-[180px] flex items-center justify-center transition-colors ${
+            className={`py-8 px-4 rounded-2xl mb-6 min-h-[180px] flex flex-col items-center justify-center transition-colors ${
               isRevealed 
                 ? isImposter 
                   ? "bg-red-50 text-red-800"
@@ -50,7 +51,7 @@ export function RevealCard({ state, onNext }: RevealCardProps) {
                 : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
             }`}
           >
-            <p className="text-[34px] leading-none font-semibold tracking-[-0.02em]">
+            <p className="text-[34px] leading-none font-semibold tracking-[-0.02em] text-center">
               {isRevealed 
                 ? isImposter 
                   ? "IMPOSTER" 
@@ -58,11 +59,23 @@ export function RevealCard({ state, onNext }: RevealCardProps) {
                 : "TAP TO REVEAL"
               }
             </p>
+            {isRevealed && (
+              <div className="mt-4 text-sm font-medium text-center">
+                <div className="inline-flex items-center text-lg bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
+                  Category - {state.categoryName}
+                </div>
+                {isImposter && (
+                  <div className="mt-2 text-red-700 bg-red-50 px-3 py-1.5 rounded-lg">
+                  Чи импостер байна лалар минь 
+                  <p className="text-xs mt-0.5">Сайн жүжээрээ сдака.</p>
+                </div>
+                )}
+              </div>
+            )}
           </div>
 
           {isRevealed ? (
             <p className="text-zinc-600 mb-6 text-[13px]">
-              When you’re done, tap the button and pass the phone to the next player.
             </p>
           ) : null}
         </div>

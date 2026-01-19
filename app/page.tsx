@@ -109,7 +109,6 @@ export default function Home() {
                   Categories
                 </div>
                 <div className="text-[13px] text-zinc-500">
-                  {selectedCategories.length} selected
                 </div>
               </div>
               <button

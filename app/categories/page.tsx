@@ -130,11 +130,9 @@ export default function CategoriesPage() {
 
         <section className="bg-white rounded-[20px] shadow-[0_10px_24px_rgba(0,0,0,0.07)] p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <div className="text-[13px] font-semibold text-zinc-900">Selected</div>
-            <div className="text-[13px] text-zinc-500">{selected.length} selected</div>
           </div>
           <div className="text-[12px] text-zinc-500">
-            Choose one or more categories. The word will come from a random selected category.
+          
           </div>
           <div className="grid grid-cols-2 gap-3">
             {categories.map((c) => {
