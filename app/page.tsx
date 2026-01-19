@@ -1,30 +1,56 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/Button";
-import { CategorySelect } from "@/components/CategorySelect";
 import { PlayerCountSelect } from "@/components/PlayerCountSelect";
 import { ImposterCountSelect } from "@/components/ImposterCountSelect";
 import { useGame } from "@/components/GameProvider";
-import data from "@/data/data.json";
+import { useCategories } from "@/components/useCategories";
+
+const SELECTED_KEY = "imposter:selectedCategories";
+
+function readSelected(): string[] {
+  if (typeof window === "undefined") return [];
+  const raw = localStorage.getItem(SELECTED_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
 
 export default function Home() {
   const { state, dispatch } = useGame();
+  const { categories } = useCategories();
   const [players, setPlayers] = useState(state.setup.players);
   const [imposters, setImposters] = useState(state.setup.imposters);
-  const [category, setCategory] = useState(state.setup.categoryName);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    state.setup.categoryNames.length ? state.setup.categoryNames : [],
+  );
   const router = useRouter();
 
-  const categories = useMemo(() => data.categories, []);
+  useEffect(() => {
+    // Prefer persisted selection; otherwise default to first category.
+    const persisted = readSelected();
+    if (persisted.length) {
+      setSelectedCategories(persisted);
+      return;
+    }
+    if (selectedCategories.length === 0 && categories.length > 0) {
+      setSelectedCategories([categories[0].name]);
+    }
+  }, [categories, selectedCategories.length]);
 
   const handleStartGame = () => {
     try {
       dispatch({
         type: "SETUP_UPDATE",
         patch: {
-          categoryName: category,
+          categoryNames: selectedCategories,
           players,
           imposters,
         },
@@ -37,7 +63,7 @@ export default function Home() {
   };
 
   const isFormValid =
-    Boolean(category) &&
+    selectedCategories.length > 0 &&
     players >= 3 &&
     imposters >= 1 &&
     imposters < players &&
@@ -53,14 +79,14 @@ export default function Home() {
       >
         <div className="bg-white rounded-[28px] shadow-[0_12px_30px_rgba(0,0,0,0.08)] overflow-hidden">
           {/* Header */}
-          <div className="p-7 text-left">
+          <div className="p-7 text-left space-y-1">
             <motion.h1 
               className="text-[28px] leading-tight font-semibold tracking-[-0.02em] text-zinc-950 mb-1"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              Who Is the Imposter
+              Imposter хэн юм бэ пизда
             </motion.h1>
             <motion.p 
               className="text-[15px] text-zinc-600"
@@ -68,7 +94,6 @@ export default function Home() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              A calm, pass-and-play social deduction game.
             </motion.p>
           </div>
           
@@ -79,11 +104,28 @@ export default function Home() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <CategorySelect
-                categories={categories}
-                value={category}
-                onChange={setCategory}
-              />
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[13px] font-semibold tracking-[-0.01em] text-zinc-900">
+                  Categories
+                </div>
+                <div className="text-[13px] text-zinc-500">
+                  {selectedCategories.length} selected
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => router.push("/categories")}
+                className="w-full h-12 rounded-2xl bg-white ring-1 ring-zinc-200 px-4 text-left hover:bg-zinc-50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-[15px] font-semibold text-zinc-950">
+                    Choose categories
+                  </div>
+                  <div className="text-[15px] text-zinc-400">›</div>
+                </div>
+              </button>
+              <div className="mt-2 text-[12px] text-zinc-500">
+              </div>
             </motion.div>
             
             <motion.div
@@ -139,7 +181,6 @@ export default function Home() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
         >
-          <p>Pass the phone • Keep votes private</p>
         </motion.div>
       </motion.div>
     </div>

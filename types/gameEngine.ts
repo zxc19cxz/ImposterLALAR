@@ -7,7 +7,11 @@ export type Role = "CIVILIAN" | "IMPOSTER";
 export type Phase = "SETUP" | "REVEAL" | "DISCUSSION" | "VOTING" | "RESULT";
 
 export type GameSetup = {
-  categoryName: string;
+  /**
+   * Multi-select categories. The game will randomly pick one category
+   * from this list at start (deterministically via seed).
+   */
+  categoryNames: string[];
   players: number;
   imposters: number;
   /**
@@ -60,6 +64,9 @@ export type Result = {
 export type GameState = {
   phase: Phase;
   setup: GameSetup;
+  /**
+   * The category chosen for this game at start (from setup.categoryNames).
+   */
   categoryName: string;
 
   // Deterministic RNG for fairness + reproducibility

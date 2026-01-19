@@ -1,0 +1,20 @@
+{
+  "categories": [
+    {
+      "name": "Animals",
+      "words": ["Cat", "Dog", "Lion", "Tiger", "Elephant", "Giraffe"]
+    },
+    {
+      "name": "Fruits",
+      "words": ["Apple", "Banana", "Orange", "Mango", "Strawberry"]
+    },
+    {
+      "name": "Jobs",
+      "words": ["Doctor", "Teacher", "Chef", "Pilot", "Firefighter"]
+    },
+    {
+      "name": "Places",
+      "words": ["Beach", "Airport", "Library", "Mall", "Museum"]
+    }
+  ]
+}
