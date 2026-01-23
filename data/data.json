@@ -506,6 +506,30 @@
                 "Спорт ундаа",
                 "Мөстэй жүүс"
             ]
+        },
+        {
+            "name": "Football clubs",
+            "words": [
+                "Real Madrid",
+                "FC Barcelona",
+                "Manchester United",
+                "Liverpool",
+                "Bayern Munich",
+                "Juventus",
+                "Paris Saint-Germain",
+                "Chelsea",
+                "Manchester City",
+                "Arsenal",
+                "AC Milan",
+                "Inter Milan",
+                "Atletico Madrid",
+                "Tottenham Hotspur",
+                "Borussia Dortmund",
+                "Ajax",
+                "Napoli",
+                "AS Roma",
+                "Sevilla"
+            ]
         }
     ]
 }
