@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { GameState, PlayerId } from "@/types/gameEngine";
 import { Button } from "./Button";
 
@@ -16,6 +16,11 @@ export function VoteCard({
   const voting = state.voting;
   const voter = voting?.voterOrder[voting.voterIndex] as PlayerId | undefined;
   const [selected, setSelected] = useState<PlayerId | null>(null);
+
+  // Reset selection when the current voter changes
+  useEffect(() => {
+    setSelected(null);
+  }, [voter, voting?.tie?.isRevote]);
 
   const candidates = useMemo(() => {
     const alive = state.round.alive.slice().sort((a, b) => a - b);

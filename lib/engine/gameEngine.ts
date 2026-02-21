@@ -138,16 +138,11 @@ export function engineReducer(state: GameState, action: GameAction): GameState {
       // Shuffle player numbers for reveal order
       const revealOrder = shuffleWithRng(playerNumbers, rng);
       
-      // Create a separate shuffle for imposter selection to ensure it's independent of reveal order
-      const imposterCandidates = [...playerNumbers];
-      const imposterSet = new Set<PlayerId>();
-      
-      // Select imposters using the same RNG but in a way that's independent of reveal order
-      while (imposterSet.size < validated.imposters && imposterCandidates.length > 0) {
-        const randomIndex = Math.floor(rng() * imposterCandidates.length);
-        const [selected] = imposterCandidates.splice(randomIndex, 1);
-        imposterSet.add(selected);
-      }
+      // Select imposters via Fisher-Yates shuffle for uniform, deterministic selection
+      const shuffledPlayers = shuffleWithRng([...playerNumbers], rng);
+      const imposterSet = new Set<PlayerId>(
+        shuffledPlayers.slice(0, validated.imposters)
+      );
 
       // Assign roles to all players
       const rolesByPlayer = Object.fromEntries(
@@ -229,7 +224,15 @@ export function engineReducer(state: GameState, action: GameAction): GameState {
       const counts = tallyVotes(voting.votes);
       const { candidates } = resolveTopCandidates(counts);
 
-      if (candidates.length === 0) return state;
+      // No valid votes: skip elimination, return to discussion
+      if (candidates.length === 0) {
+        return {
+          ...state,
+          phase: "DISCUSSION",
+          voting: null,
+          lastElimination: null,
+        };
+      }
 
       const isTie = candidates.length > 1;
       if (isTie && !voting.tie) {
@@ -246,15 +249,24 @@ export function engineReducer(state: GameState, action: GameAction): GameState {
         };
       }
 
-      const eliminated = isTie ? candidates[0] : candidates[0];
+      // Tie: use lowest ID for deterministic tie-break
+      const eliminated = candidates[0];
       const nextAlive = state.round.alive.filter((p) => p !== eliminated);
       const nextEliminated = [...state.round.eliminated, eliminated];
 
       const result = computeWinnerIfAny(nextAlive, state.rolesByPlayer);
+      const nextRoundNumber =
+        result === null ? state.round.number + 1 : state.round.number;
+
       return {
         ...state,
         phase: result ? "RESULT" : "DISCUSSION",
-        round: { ...state.round, alive: nextAlive, eliminated: nextEliminated },
+        round: {
+          ...state.round,
+          number: nextRoundNumber,
+          alive: nextAlive,
+          eliminated: nextEliminated,
+        },
         voting: null,
         lastElimination: {
           eliminated,
