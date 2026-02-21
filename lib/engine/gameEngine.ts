@@ -5,7 +5,6 @@ import type {
   GameState,
   PlayerId,
   Role,
-  VotingState,
 } from "@/types/gameEngine";
 import { mulberry32, nextSeed, sampleWithRng, shuffleWithRng } from "./random";
 
@@ -38,52 +37,6 @@ export const initialEngineState: GameState = {
   lastElimination: null,
   result: null,
 };
-
-function computeWinnerIfAny(
-  alive: PlayerId[],
-  rolesByPlayer: Record<PlayerId, Role>,
-): GameState["result"] {
-  const impostersAlive = alive.filter((p) => rolesByPlayer[p] === "IMPOSTER")
-    .length;
-  const civiliansAlive = alive.length - impostersAlive;
-
-  if (impostersAlive === 0) {
-    return { winner: "CIVILIANS", reason: "ALL_IMPOSTERS_ELIMINATED" };
-  }
-  if (impostersAlive >= civiliansAlive) {
-    return { winner: "IMPOSTERS", reason: "IMPOSTERS_EQUAL_OR_OUTNUMBER" };
-  }
-  return null;
-}
-
-function tallyVotes(votes: Record<PlayerId, PlayerId>): Record<PlayerId, number> {
-  const counts: Record<PlayerId, number> = {};
-  for (const voterStr of Object.keys(votes)) {
-    const voter = Number(voterStr) as PlayerId;
-    const target = votes[voter];
-    counts[target] = (counts[target] ?? 0) + 1;
-  }
-  return counts;
-}
-
-function resolveTopCandidates(counts: Record<PlayerId, number>) {
-  const entries = Object.entries(counts).map(([k, v]) => [
-    Number(k),
-    v,
-  ]) as Array<[PlayerId, number]>;
-  if (entries.length === 0) return { max: 0, candidates: [] as PlayerId[] };
-  const max = Math.max(...entries.map(([, v]) => v));
-  const candidates = entries
-    .filter(([, v]) => v === max)
-    .map(([p]) => p)
-    .sort((a, b) => a - b);
-  return { max, candidates };
-}
-
-function buildVotingState(alive: PlayerId[]): VotingState {
-  const voterOrder = [...alive].sort((a, b) => a - b);
-  return { voterOrder, voterIndex: 0, votes: {}, tie: null };
-}
 
 function validateSetup(setup: GameSetup, categories: Category[]) {
   const selected = (setup.categoryNames ?? []).filter(Boolean);
@@ -180,109 +133,15 @@ export function engineReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         revealIndex: nextIndex,
-        phase: done ? "DISCUSSION" : "REVEAL",
+        phase: done ? "TIMER" : "REVEAL",
       };
     }
-    case "DISCUSSION_START_VOTING": {
-      if (state.phase !== "DISCUSSION") return state;
+    case "TIMER_END": {
+      if (state.phase !== "TIMER") return state;
       return {
         ...state,
-        phase: "VOTING",
-        voting: buildVotingState(state.round.alive),
-        lastElimination: null,
-      };
-    }
-    case "VOTE_CAST": {
-      if (state.phase !== "VOTING" || !state.voting) return state;
-      const voting = state.voting;
-      const expectedVoter = voting.voterOrder[voting.voterIndex];
-      if (action.voter !== expectedVoter) return state;
-      if (!state.round.alive.includes(action.target)) return state;
-      if (action.target === action.voter) return state;
-      return {
-        ...state,
-        voting: {
-          ...voting,
-          votes: { ...voting.votes, [action.voter]: action.target },
-        },
-      };
-    }
-    case "VOTING_CONFIRM_NEXT": {
-      if (state.phase !== "VOTING" || !state.voting) return state;
-      const voting = state.voting;
-      const currentVoter = voting.voterOrder[voting.voterIndex];
-      if (!currentVoter) return state;
-      if (!voting.votes[currentVoter]) return state; // must cast before continuing
-
-      const nextIndex = voting.voterIndex + 1;
-      const done = nextIndex >= voting.voterOrder.length;
-      if (!done) {
-        return { ...state, voting: { ...voting, voterIndex: nextIndex } };
-      }
-
-      // Resolve vote (with deterministic tie-breaking).
-      const counts = tallyVotes(voting.votes);
-      const { candidates } = resolveTopCandidates(counts);
-
-      // No valid votes: skip elimination, return to discussion
-      if (candidates.length === 0) {
-        return {
-          ...state,
-          phase: "DISCUSSION",
-          voting: null,
-          lastElimination: null,
-        };
-      }
-
-      const isTie = candidates.length > 1;
-      if (isTie && !voting.tie) {
-        // One revote among tied candidates.
-        return {
-          ...state,
-          voting: {
-            voterOrder: voting.voterOrder,
-            voterIndex: 0,
-            votes: {},
-            tie: { candidates, isRevote: true },
-          },
-          lastElimination: null,
-        };
-      }
-
-      // Tie: use lowest ID for deterministic tie-break
-      const eliminated = candidates[0];
-      const nextAlive = state.round.alive.filter((p) => p !== eliminated);
-      const nextEliminated = [...state.round.eliminated, eliminated];
-
-      const result = computeWinnerIfAny(nextAlive, state.rolesByPlayer);
-      const nextRoundNumber =
-        result === null ? state.round.number + 1 : state.round.number;
-
-      return {
-        ...state,
-        phase: result ? "RESULT" : "DISCUSSION",
-        round: {
-          ...state.round,
-          number: nextRoundNumber,
-          alive: nextAlive,
-          eliminated: nextEliminated,
-        },
-        voting: null,
-        lastElimination: {
-          eliminated,
-          counts,
-          wasTie: isTie,
-          wasRevote: Boolean(voting.tie?.isRevote),
-        },
-        result,
-      };
-    }
-    case "ROUND_CONTINUE": {
-      if (state.phase !== "DISCUSSION") return state;
-      return {
-        ...state,
-        round: { ...state.round, number: state.round.number + 1 },
-        lastElimination: null,
+        phase: "RESULT",
+        result: { winner: "CIVILIANS", reason: "TIME_UP" },
       };
     }
     case "GAME_RESET": {

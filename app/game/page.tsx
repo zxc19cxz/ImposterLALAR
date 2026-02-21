@@ -1,12 +1,11 @@
 'use client';
 
 import { useGame } from '@/components/GameProvider';
-import { DiscussionCard } from '@/components/DiscussionCard';
 import { RevealCard } from '@/components/RevealCard';
 import { ResultCard } from '@/components/ResultCard';
-import { VoteCard } from '@/components/VoteCard';
+import { TimerCard } from '@/components/TimerCard';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 
 export default function GamePage() {
   const { state, dispatch } = useGame();
@@ -18,10 +17,14 @@ export default function GamePage() {
     }
   }, [state.phase, router]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     dispatch({ type: "GAME_RESET" });
     router.push("/");
-  };
+  }, [dispatch, router]);
+
+  const handleTimerEnd = useCallback(() => {
+    dispatch({ type: "TIMER_END" });
+  }, [dispatch]);
 
   return (
     <div className="min-h-screen bg-[rgb(242,242,247)]">
@@ -32,20 +35,8 @@ export default function GamePage() {
             onNext={() => dispatch({ type: "REVEAL_NEXT" })}
           />
         )}
-        {state.phase === "DISCUSSION" && (
-          <DiscussionCard
-            state={state}
-            onStartVoting={() => dispatch({ type: "DISCUSSION_START_VOTING" })}
-          />
-        )}
-        {state.phase === "VOTING" && state.voting && (
-          <VoteCard
-            state={state}
-            onCastVote={(voter, target) =>
-              dispatch({ type: "VOTE_CAST", voter, target })
-            }
-            onConfirmNext={() => dispatch({ type: "VOTING_CONFIRM_NEXT" })}
-          />
+        {state.phase === "TIMER" && (
+          <TimerCard onTimerEnd={handleTimerEnd} />
         )}
         {state.phase === "RESULT" && (
           <ResultCard state={state} onReset={handleReset} />

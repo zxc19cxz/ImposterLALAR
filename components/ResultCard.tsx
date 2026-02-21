@@ -5,12 +5,15 @@ import { Button } from "./Button";
 
 function titleFor(state: GameState) {
   if (!state.result) return "Game over";
+  if (state.result.reason === "TIME_UP") return "Time's up!";
   return state.result.winner === "CIVILIANS" ? "Civilians win" : "Imposters win";
 }
 
 function subtitleFor(state: GameState) {
   if (!state.result) return "Thanks for playing.";
   switch (state.result.reason) {
+    case "TIME_UP":
+      return "The 5-minute round has ended.";
     case "ALL_IMPOSTERS_ELIMINATED":
       return "All imposters have been eliminated.";
     case "IMPOSTERS_EQUAL_OR_OUTNUMBER":

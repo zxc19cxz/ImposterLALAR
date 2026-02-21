@@ -4,7 +4,7 @@ export type PlayerId = number; // 1..N
 
 export type Role = "CIVILIAN" | "IMPOSTER";
 
-export type Phase = "SETUP" | "REVEAL" | "DISCUSSION" | "VOTING" | "RESULT";
+export type Phase = "SETUP" | "REVEAL" | "TIMER" | "RESULT";
 
 export type GameSetup = {
   /**
@@ -58,7 +58,8 @@ export type Result = {
   reason:
     | "ALL_IMPOSTERS_ELIMINATED"
     | "IMPOSTERS_EQUAL_OR_OUTNUMBER"
-    | "CONFIG_INVALID";
+    | "CONFIG_INVALID"
+    | "TIME_UP";
 };
 
 export type GameState = {
@@ -98,10 +99,7 @@ export type GameAction =
   | { type: "SETUP_UPDATE"; patch: Partial<GameSetup> }
   | { type: "GAME_START"; categories: Category[] }
   | { type: "REVEAL_NEXT" }
-  | { type: "DISCUSSION_START_VOTING" }
-  | { type: "VOTE_CAST"; voter: PlayerId; target: PlayerId }
-  | { type: "VOTING_CONFIRM_NEXT" }
-  | { type: "ROUND_CONTINUE" }
+  | { type: "TIMER_END" }
   | { type: "GAME_RESET" };
 
 export type GameContextValue = {
